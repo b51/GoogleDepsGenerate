@@ -51,6 +51,7 @@ make -j4 && make install
 
 cp -rf $CERES_ROOT/install/include/* $SOURCE_ROOT/install/include
 cp -rf $CERES_ROOT/install/lib/lib* $SOURCE_ROOT/install/lib
+cp -rf $CERES_ROOT/install/lib/cmake* $SOURCE_ROOT/install/lib
 #===================================================#
 
 echo -e "\e[1;32mBuild and install cartographer.\e[0m"
