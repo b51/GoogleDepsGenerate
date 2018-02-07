@@ -1,0 +1,66 @@
+*~
+.*.swp
+CMakeLists.txt.user*
+*.kdev*
+*.bak
+*.orig
+build/
+install/
+build-release/
+build-debug/
+docs/html
+*.aux
+*.blg
+*.toc
+*.fdb_latexmk
+*.bbl
+*.log
+*.synctex.gz
+ceres.pdf
+ceres-solver.pdf
+docs/minted.sty
+obj/
+jni/libs/
+.buildinfo
+bazel-*
+
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+lua
+luac
+protoc
+unittest_proto_middleman
+.libs
+*.pb.cc
+*.pb.h
