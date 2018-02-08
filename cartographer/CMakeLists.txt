@@ -26,7 +26,7 @@ include("${PROJECT_SOURCE_DIR}/cartographer/cmake/functions.cmake")
 google_initialize_cartographer_project()
 
 find_package(Boost REQUIRED COMPONENTS iostreams)
-find_package(Ceres REQUIRED COMPONENTS SparseLinearAlgebraLibrary PATHS "${PROJECT_SOURCE_DIR}/../ceres-solver/install")
+find_package(Ceres REQUIRED COMPONENTS SparseLinearAlgebraLibrary PATHS "${CERES_INSTALL_DIR}")
 find_package(Eigen3 REQUIRED)
 find_package(LuaGoogle REQUIRED)
 find_package(Protobuf 3.0.0 REQUIRED)
@@ -70,7 +70,9 @@ list(APPEND ALL_LIBRARY_SRCS ${ALL_PROTO_SRCS})
 
 set(INSTALL_GENERATED_HDRS ${ALL_PROTO_HDRS})
 
-set(INSTALL_SOURCE_CMAKES ${ALL_LIBRARY_CMAKES})
+set(INSTALL_SOURCE_CMAKES
+  ${ALL_LIBRARY_CMAKES}
+  ${PROJECT_SOURCE_DIR}/cartographer/cmake/functions.cmake)
 
 add_library(${PROJECT_NAME} ${ALL_LIBRARY_HDRS} ${ALL_LIBRARY_SRCS})
 

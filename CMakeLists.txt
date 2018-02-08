@@ -1,13 +1,19 @@
 cmake_minimum_required(VERSION 3.2.12)  # Ships with Ubuntu 14.04 (Trusty)
 
+set(GOOGLE_DEPS_INSTALL_DIR
+  ${PROJECT_SOURCE_DIR}/../GoogleDeps)
+
 set(ENV{LUA_DIR}
-  ${PROJECT_SOURCE_DIR}/install)
+  ${GOOGLE_DEPS_INSTALL_DIR})
+
+set(CERES_INSTALL_DIR
+  ${GOOGLE_DEPS_INSTALL_DIR})
 
 set(PROTOBUF_PROTOC_EXECUTABLE
-  ${PROJECT_SOURCE_DIR}/install/bin/protoc)
+  ${GOOGLE_DEPS_INSTALL_DIR}/bin/protoc)
 set(PROTOBUF_INCLUDE_DIR
-  ${PROJECT_SOURCE_DIR}/install/include)
+  ${GOOGLE_DEPS_INSTALL_DIR}/include)
 set(PROTOBUF_LIBRARY
-  ${PROJECT_SOURCE_DIR}/install/lib)
+  ${GOOGLE_DEPS_INSTALL_DIR}/lib)
 
 add_subdirectory(cartographer)
