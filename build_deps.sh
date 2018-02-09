@@ -15,9 +15,10 @@ INSTALL_ROOT=$SOURCE_ROOT/../GoogleDeps
 BIN_ROOT=$INSTALL_ROOT/bin
 INCLUDE_ROOT=$INSTALL_ROOT/include
 LIB_ROOT=$INSTALL_ROOT/lib
+CMAKE_ROOT=$INSTALL_ROOT/cmake
 
-rm -rf $INSTALL_ROOT/bin $INSTALL_ROOT/include $INSTALL_ROOT/lib
-mkdir -p $BIN_ROOT $INCLUDE_ROOT $LIB_ROOT
+rm -rf $BIN_ROOT $INCLUDE_ROOT $LIB_ROOT $CMAKE_ROOT
+mkdir -p $BIN_ROOT $INCLUDE_ROOT $LIB_ROOT $CMAKE_ROOT
 
 echo -e "\e[1;32mBuild Lua.\e[0m"
 #---------------------------------------------------#
@@ -63,3 +64,6 @@ mkdir build && cd build && cmake ..
 make -j8
 cp -rf cartographer/cartographer $INCLUDE_ROOT
 cp -rf cartographer/lib* $LIB_ROOT
+
+echo -e "\e[1;32mCopy GoogleDeps.cmake.\e[0m"
+cp $SOURCE_ROOT/GoogleDeps.cmake $CMAKE_ROOT
