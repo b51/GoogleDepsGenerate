@@ -17,7 +17,7 @@ INCLUDE_ROOT=$INSTALL_ROOT/include
 LIB_ROOT=$INSTALL_ROOT/lib
 CMAKE_ROOT=$INSTALL_ROOT/cmake
 
-rm -rf $BIN_ROOT $INCLUDE_ROOT $LIB_ROOT $CMAKE_ROOT
+rm -rf $INSTALL_ROOT
 mkdir -p $BIN_ROOT $INCLUDE_ROOT $LIB_ROOT $CMAKE_ROOT
 
 echo -e "\e[1;32mBuild Lua.\e[0m"
@@ -66,5 +66,7 @@ cp -rf cartographer/cartographer $INCLUDE_ROOT
 cp -rf cartographer/lib* $LIB_ROOT
 cp $SOURCE_ROOT/cartographer/cartographer/cmake/functions.cmake $INCLUDE_ROOT/cartographer/cmake/
 
-echo -e "\e[1;32mCopy GoogleDeps.cmake.\e[0m"
-cp $SOURCE_ROOT/GoogleDeps.cmake $CMAKE_ROOT
+echo -e "\e[1;32mCopy ros pkgs.\e[0m"
+cp $SOURCE_ROOT/rospkg/cmake/GoogleDeps.cmake $CMAKE_ROOT
+cp $SOURCE_ROOT/rospkg/CMakeLists.txt.pkg   $INSTALL_ROOT
+cp $SOURCE_ROOT/rospkg/package.xml.pkg $INSTALL_ROOT
