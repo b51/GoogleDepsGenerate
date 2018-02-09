@@ -1,4 +1,4 @@
-prefix=/data/bijunxi/RobotCoreCtl/src/Dependences/protobuf-3.0.0/install
+prefix=/data/bijunxi/RobotCoreCtl/src/Algorithms/Dependences/protobuf-3.0.0/install
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include

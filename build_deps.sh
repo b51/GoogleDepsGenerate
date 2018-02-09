@@ -64,6 +64,7 @@ mkdir build && cd build && cmake ..
 make -j8
 cp -rf cartographer/cartographer $INCLUDE_ROOT
 cp -rf cartographer/lib* $LIB_ROOT
+cp $SOURCE_ROOT/cartographer/cartographer/cmake/functions.cmake $INCLUDE_ROOT/cartographer/cmake/
 
 echo -e "\e[1;32mCopy GoogleDeps.cmake.\e[0m"
 cp $SOURCE_ROOT/GoogleDeps.cmake $CMAKE_ROOT
