@@ -34,12 +34,13 @@ cp -rf install/lib/lib* $LIB_ROOT
 
 echo -e "\e[1;32mBuild and install protobuf.\e[0m"
 #---------------------------------------------------#
+cd $SOURCE_ROOT
 PROTOBUF_ROOT=$SOURCE_ROOT/protobuf-3.0.0
+rm -rf $PROTOBUF_ROOT
+tar zxvf protobuf-cpp-3.0.0.tar.gz
 cd $PROTOBUF_ROOT
-rm -rf install
-make clean
 ./configure --prefix=$PROTOBUF_ROOT/install
-make -j8
+make -j4
 make install
 cp -rf install/bin/* $BIN_ROOT
 cp -rf install/include/* $INCLUDE_ROOT
@@ -53,7 +54,7 @@ cd $CERES_ROOT
 rm -rf build install
 mkdir build && cd build
 cmake -DCXX11=ON -DCMAKE_INSTALL_PREFIX=$INSTALL_ROOT ..
-make -j8 && make install
+make -j4 && make install
 #===================================================#
 
 echo -e "\e[1;32mBuild and install cartographer.\e[0m"
@@ -61,12 +62,12 @@ echo -e "\e[1;32mBuild and install cartographer.\e[0m"
 cd $SOURCE_ROOT
 rm -rf build
 mkdir build && cd build && cmake ..
-make -j8
+make -j4
 cp -rf cartographer/cartographer $INCLUDE_ROOT
 cp -rf cartographer/lib* $LIB_ROOT
 cp $SOURCE_ROOT/cartographer/cartographer/cmake/functions.cmake $INCLUDE_ROOT/cartographer/cmake/
 
 echo -e "\e[1;32mCopy ros pkgs.\e[0m"
 cp $SOURCE_ROOT/rospkg/cmake/GoogleDeps.cmake $CMAKE_ROOT
-cp $SOURCE_ROOT/rospkg/CMakeLists.txt.pkg   $INSTALL_ROOT
-cp $SOURCE_ROOT/rospkg/package.xml.pkg $INSTALL_ROOT
+cp $SOURCE_ROOT/rospkg/CMakeLists.txt.pkg   $INSTALL_ROOT/CMakeLists.txt
+cp $SOURCE_ROOT/rospkg/package.xml.pkg $INSTALL_ROOT/package.xml
