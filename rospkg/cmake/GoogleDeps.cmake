@@ -22,6 +22,8 @@ find_library(CARTO_LIBRARIES
   NAMES cartographer
   PATHS ${GoogleDeps_SOURCE_PREFIX}/lib)
 
+set(PROTOBUF_LIBS ${GoogleDeps_SOURCE_PREFIX}/lib/libprotobuf.so)
+
 set(GOOGLE_INCLUDE_DIRS
   ${GoogleDeps_SOURCE_PREFIX}/include)
 
@@ -29,6 +31,7 @@ set(GOOGLE_LIBS
   ${CARTO_LIBRARIES}
   ${LUA_LIBRARIES}
   ${CERES_LIBRARIES}
+  ${PROTOBUF_LIBS}
   gflags
   glog
 )
