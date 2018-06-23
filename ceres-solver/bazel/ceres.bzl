@@ -49,6 +49,8 @@ CERES_SRCS = ["internal/ceres/" + filename for filename in [
     "compressed_row_sparse_matrix.cc",
     "conditioned_cost_function.cc",
     "conjugate_gradients_solver.cc",
+    "context.cc",
+    "context_impl.cc",
     "coordinate_descent_minimizer.cc",
     "corrector.cc",
     "covariance.cc",
@@ -87,6 +89,9 @@ CERES_SRCS = ["internal/ceres/" + filename for filename in [
     "low_rank_inverse_hessian.cc",
     "minimizer.cc",
     "normal_prior.cc",
+    "parallel_for_cxx.cc",
+    "parallel_for_tbb.cc",
+    "parallel_utils.cc",
     "parameter_block_ordering.cc",
     "partitioned_matrix_view.cc",
     "polynomial.cc",
@@ -111,7 +116,9 @@ CERES_SRCS = ["internal/ceres/" + filename for filename in [
     "sparse_normal_cholesky_solver.cc",
     "split.cc",
     "stringprintf.cc",
+    "subset_preconditioner.cc",
     "suitesparse.cc",
+    "thread_pool.cc",
     "thread_token_provider.cc",
     "triplet_sparse_matrix.cc",
     "trust_region_minimizer.cc",
@@ -122,54 +129,14 @@ CERES_SRCS = ["internal/ceres/" + filename for filename in [
     "visibility_based_preconditioner.cc",
     "visibility.cc",
     "wall_time.cc",
-    "generated/schur_eliminator_d_d_d.cc",
-    "generated/schur_eliminator_2_2_2.cc",
-    "generated/schur_eliminator_2_2_3.cc",
-    "generated/schur_eliminator_2_2_4.cc",
-    "generated/schur_eliminator_2_2_d.cc",
-    "generated/schur_eliminator_2_3_3.cc",
-    "generated/schur_eliminator_2_3_4.cc",
-    "generated/schur_eliminator_2_3_6.cc",
-    "generated/schur_eliminator_2_3_9.cc",
-    "generated/schur_eliminator_2_3_d.cc",
-    "generated/schur_eliminator_2_4_3.cc",
-    "generated/schur_eliminator_2_4_4.cc",
-    "generated/schur_eliminator_2_4_6.cc",
-    "generated/schur_eliminator_2_4_8.cc",
-    "generated/schur_eliminator_2_4_9.cc",
-    "generated/schur_eliminator_2_4_d.cc",
-    "generated/schur_eliminator_2_d_d.cc",
-    "generated/schur_eliminator_4_4_2.cc",
-    "generated/schur_eliminator_4_4_3.cc",
-    "generated/schur_eliminator_4_4_4.cc",
-    "generated/schur_eliminator_4_4_d.cc",
-    "generated/partitioned_matrix_view_d_d_d.cc",
-    "generated/partitioned_matrix_view_2_2_2.cc",
-    "generated/partitioned_matrix_view_2_2_3.cc",
-    "generated/partitioned_matrix_view_2_2_4.cc",
-    "generated/partitioned_matrix_view_2_2_d.cc",
-    "generated/partitioned_matrix_view_2_3_3.cc",
-    "generated/partitioned_matrix_view_2_3_4.cc",
-    "generated/partitioned_matrix_view_2_3_6.cc",
-    "generated/partitioned_matrix_view_2_3_9.cc",
-    "generated/partitioned_matrix_view_2_3_d.cc",
-    "generated/partitioned_matrix_view_2_4_3.cc",
-    "generated/partitioned_matrix_view_2_4_4.cc",
-    "generated/partitioned_matrix_view_2_4_6.cc",
-    "generated/partitioned_matrix_view_2_4_8.cc",
-    "generated/partitioned_matrix_view_2_4_9.cc",
-    "generated/partitioned_matrix_view_2_4_d.cc",
-    "generated/partitioned_matrix_view_2_d_d.cc",
-    "generated/partitioned_matrix_view_4_4_2.cc",
-    "generated/partitioned_matrix_view_4_4_3.cc",
-    "generated/partitioned_matrix_view_4_4_4.cc",
-    "generated/partitioned_matrix_view_4_4_d.cc",
 ]]
 
 # TODO(rodrigoq): add support to configure Ceres into various permutations,
 # like SuiteSparse or not, threading or not, glog or not, and so on.
 # See https://github.com/ceres-solver/ceres-solver/issues/335.
-def ceres_library(name):
+def ceres_library(name,
+                  restrict_schur_specializations=False,
+                  gflags_namespace="gflags"):
     # The path to internal/ depends on whether Ceres is the main workspace or
     # an external repository.
     if native.repository_name() != '@':
@@ -177,11 +144,23 @@ def ceres_library(name):
     else:
         internal = 'internal'
 
+    # The fixed-size Schur eliminator template instantiations incur a large
+    # binary size penalty, and are slow to compile, so support disabling them.
+    schur_eliminator_copts = []
+    if restrict_schur_specializations:
+        schur_eliminator_copts.append("-DCERES_RESTRICT_SCHUR_SPECIALIZATION")
+        schur_sources = [
+            "internal/ceres/generated/schur_eliminator_d_d_d.cc",
+            "internal/ceres/generated/partitioned_matrix_view_d_d_d.cc",
+        ]
+    else:
+        schur_sources = native.glob(["internal/ceres/generated/*.cc"])
+
     native.cc_library(
         name = name,
 
         # Internal sources, options, and dependencies.
-        srcs = CERES_SRCS + native.glob([
+        srcs = CERES_SRCS + schur_sources + native.glob([
             "include/ceres/internal/*.h",
         ]) + native.glob([
             "internal/ceres/*.h",
@@ -202,7 +181,7 @@ def ceres_library(name):
         copts = [
             "-I" + internal,
             "-Wno-sign-compare",
-        ],
+        ] + schur_eliminator_copts,
 
         # These include directories and defines are propagated to other targets
         # depending on Ceres.
@@ -215,6 +194,7 @@ def ceres_library(name):
             "CERES_NO_THREADS",
             "CERES_NO_LAPACK",
             "CERES_STD_UNORDERED_MAP",
+            "CERES_GFLAGS_NAMESPACE=" + gflags_namespace,
         ],
         includes = [
             "config",

@@ -37,8 +37,6 @@ if (POLICY CMP0042)
   cmake_policy(SET CMP0042 NEW)
 endif()
 
-include(CMakeDependentOption)
-
 project(Ceres C CXX)
 
 # NOTE: The 'generic' CMake variables CMAKE_[SOURCE/BINARY]_DIR should not be
@@ -92,6 +90,7 @@ read_ceres_version_from_source(${Ceres_SOURCE_DIR})
 
 enable_testing()
 
+include(CMakeDependentOption)
 option(MINIGLOG "Use a stripped down version of glog." OFF)
 option(GFLAGS "Enable Google Flags." ON)
 option(SUITESPARSE "Enable SuiteSparse." ON)
@@ -104,38 +103,45 @@ option(SCHUR_SPECIALIZATIONS "Enable fixed-size schur specializations." ON)
 option(CUSTOM_BLAS
        "Use handcoded BLAS routines (usually faster) instead of Eigen."
        ON)
+# Ceres does not use C++11 internally, however it does use shared_ptr
+# (required) and unordered_map (if available), both of which were present in
+# previous iterations of what became C++11.  GCC & Clang can have both TR1 &
+# C++11 versions of both shared_ptr & unordered_map and by default on Linux,
+# we will detect the TR1 versions if they exist, as they do NOT require
+# -std=c++11 to be passed when compiling Ceres, and any client code that uses
+# Ceres.  This will result in conflicts if the client code uses C++11.
+# Enabling this option forces the use of the C++11 versions (& -std=c++11) if
+# available.
+option(CXX11 "Enable use of C++11 headers if available (requires client code use C++11)." OFF)
 # Multithreading using OpenMP
-option(OPENMP "Enable threaded solving in Ceres (requires OpenMP)" ON)
+cmake_dependent_option(
+  OPENMP "Enable threaded solving in Ceres (requires OpenMP)" ON
+  "NOT TBB;NOT CXX11_THREADS" OFF)
 # Multithreading using TBB
-option(TBB "Enable threaded solving in Ceres with TBB (requires TBB and C++11)" OFF)
+cmake_dependent_option(
+  TBB "Enable threaded solving in Ceres with TBB (requires TBB and C++11)" OFF
+  "CXX11;NOT OPENMP;NOT CXX11_THREADS" OFF)
+# Multithreading using C++11 primitives.
+cmake_dependent_option(
+  CXX11_THREADS "Enable threaded solving in Ceres with C++11 primitives" OFF
+  "CXX11;NOT OPENMP;NOT TBB" OFF)
 # Enable the use of Eigen as a sparse linear algebra library for
 # solving the nonlinear least squares problems.
 option(EIGENSPARSE "Enable Eigen as a sparse linear algebra library." ON)
-if (NOT MSVC)
-  # Ceres does not use C++11 internally, however it does use shared_ptr
-  # (required) and unordered_map (if available), both of which were present in
-  # previous iterations of what became C++11.  GCC & Clang can have both TR1 &
-  # C++11 versions of both shared_ptr & unordered_map and by default on Linux,
-  # we will detect the TR1 versions if they exist, as they do NOT require
-  # -std=c++11 to be passed when compiling Ceres, and any client code that uses
-  # Ceres.  This will result in conflicts if the client code uses C++11.
-  # Enabling this option forces the use of the C++11 versions (& -std=c++11) if
-  # available.
-  #
-  # This option is not available on Windows when using MSVC, as there, any new
-  # (C++11 etc) features available are on by default and there is no analogue to
-  # -std=c++11.  It will however be available for MinGW & CygWin, which can
-  # support -std=c++11.
-  option(CXX11 "Enable use of C++11 headers if available (requires client code use C++11)." OFF)
-endif(NOT MSVC)
 option(EXPORT_BUILD_DIR
   "Export build directory using CMake (enables external use without install)." OFF)
 option(BUILD_TESTING "Enable tests" ON)
 option(BUILD_DOCUMENTATION "Build User's Guide (html)" OFF)
 option(BUILD_EXAMPLES "Build examples" ON)
-cmake_dependent_option(BUILD_BENCHMARKS "Build Ceres benchmarking suite" ON "CXX11" OFF)
+cmake_dependent_option(
+  BUILD_BENCHMARKS "Build Ceres benchmarking suite" ON "CXX11" OFF)
 option(BUILD_SHARED_LIBS "Build Ceres as a shared library." OFF)
 if (MSVC)
+  # MSVC has no analogue of -std=c++11, as all features available are on by
+  # default. Enable CXX11 by default and disable if the required features
+  # are not found (<= VS2010).
+  update_cache_variable(CXX11 ON)
+
   option(MSVC_USE_STATIC_CRT
     "MS Visual Studio: Use static C-Run Time Library in place of shared." OFF)
 
@@ -205,12 +211,21 @@ unset(CERES_COMPILE_OPTIONS)
 # Eigen.
 find_package(Eigen REQUIRED)
 if (EIGEN_FOUND)
+  message("-- Found Eigen version ${EIGEN_VERSION}: ${EIGEN_INCLUDE_DIRS}")
   if (EIGEN_VERSION VERSION_LESS 3.1.0)
     message(FATAL_ERROR "-- Ceres requires Eigen version >= 3.1.0 in order "
       "that Eigen/SparseCore be available, detected version of Eigen is: "
       "${EIGEN_VERSION}")
   endif (EIGEN_VERSION VERSION_LESS 3.1.0)
-  message("-- Found Eigen version ${EIGEN_VERSION}: ${EIGEN_INCLUDE_DIRS}")
+
+  if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64.*|AARCH64.*)" AND
+      EIGEN_VERSION VERSION_LESS 3.3.4)
+    # As per issue #289: https://github.com/ceres-solver/ceres-solver/issues/289
+    # the bundle_adjustment_test will fail for Eigen < 3.3.4 on aarch64.
+    message(FATAL_ERROR "-- Ceres requires Eigen version >= 3.3.4 on aarch64. "
+      "Detected version of Eigen is: ${EIGEN_VERSION}.")
+  endif()
+
   if (EIGENSPARSE)
     message("-- Enabling use of Eigen as a sparse linear algebra library.")
     list(APPEND CERES_COMPILE_OPTIONS CERES_USE_EIGEN_SPARSE)
@@ -392,14 +407,6 @@ if (NOT CUSTOM_BLAS)
   message("-- Disabling custom blas")
 endif (NOT CUSTOM_BLAS)
 
-# OpenMP and TBB are mutually exclusive options. OpenMP is on by default thus
-# disable it if the user requested TBB.
-if (TBB AND OPENMP)
-  update_cache_variable(OPENMP OFF)
-  message("-- Intel TBB enabled; disabling OpenMP support (they are mutually "
-    "exclusive)")
-endif (TBB AND OPENMP)
-
 if (OPENMP)
   # Find quietly, as we can continue without OpenMP if it is not found.
   find_package(OpenMP QUIET)
@@ -413,40 +420,10 @@ if (OPENMP)
       "Clang < 3.8, and at least Xcode <= 8.  See Ceres documentation for "
       "instructions to build with LLVM from Homebrew to enable OpenMP on OS X.")
     update_cache_variable(OPENMP OFF)
-    list(APPEND CERES_COMPILE_OPTIONS CERES_NO_THREADS)
   endif (OPENMP_FOUND)
 else (OPENMP)
   message("-- Building without OpenMP, disabling.")
 endif (OPENMP)
-
-if (TBB)
-  find_package(TBB QUIET)
-  if (TBB_FOUND)
-    message("-- Building with TBB (version: ${TBB_VERSION}).")
-    list(APPEND CERES_COMPILE_OPTIONS CERES_USE_TBB)
-    include_directories(${TBB_INCLUDE_DIRS})
-    if (NOT CXX11)
-      message("-- Enabling CXX11 (C++11) option required by TBB=ON.")
-      update_cache_variable(CXX11 ON)
-    endif()
-  else (TBB_FOUND)
-    message("-- Failed to find TBB, disabling.")
-    update_cache_variable(TBB OFF)
-  endif (TBB_FOUND)
-endif (TBB)
-
-if (NOT OPENMP AND NOT TBB)
-  message("-- Neither OpenMP or TBB is enabled, disabling multithreading.")
-  list(APPEND CERES_COMPILE_OPTIONS CERES_NO_THREADS)
-else (NOT OPENMP AND NOT TBB)
-  if (UNIX)
-    # At least on Linux, we need pthreads to be enabled for mutex to
-    # compile.  This may not work on Windows or Android.
-    find_package(Threads REQUIRED)
-    list(APPEND CERES_COMPILE_OPTIONS CERES_HAVE_PTHREAD)
-    list(APPEND CERES_COMPILE_OPTIONS CERES_HAVE_RWLOCK)
-  endif (UNIX)
-endif (NOT OPENMP AND NOT TBB)
 
 # Initialise CMAKE_REQUIRED_FLAGS used by CheckCXXSourceCompiles with the
 # contents of CMAKE_CXX_FLAGS such that if the user has passed extra flags
@@ -495,6 +472,14 @@ else (SHARED_PTR_FOUND)
     "if you expect C++11 to be available.")
 endif (SHARED_PTR_FOUND)
 
+include(FindCXX11MathFunctions)
+find_cxx11_math_functions()
+if (CXX11 AND NOT CXX11_MATH_FUNCTIONS_FOUND)
+  message("-- Failed to find C++11 math functions (cbrt(), exp2() etc). "
+    "Disabling C++11.")
+  update_cache_variable(CXX11 OFF)
+endif()
+
 # To ensure that CXX11 accurately reflects whether we are using C++11,
 # check if it is required given where the potentially C++11 features Ceres
 # uses were found, and disable it if C++11 is not being used.
@@ -521,6 +506,56 @@ if (CXX11)
   endif()
 endif(CXX11)
 
+if (CXX11 AND (TBB OR CXX11_THREADS))
+  # We require <atomic> for both TBB & CXX11_THREADS. Not all compilers
+  # (MSVC 2010) have <atomic> even if they have other C++11 features.
+  check_include_file_cxx(atomic HAVE_STD_ATOMIC_HEADER)
+  if (NOT HAVE_STD_ATOMIC_HEADER)
+    message("-- Failed to find <atomic> (C++11) header. Disabling "
+      "TBB and C++11 threads.")
+    # update_cache_variable() requires that the variable exists in the
+    # cache. As TBB & CXX11_THREADS are dependent-options they might not
+    # exist at this point so check before disabling.
+    if (TBB)
+      update_cache_variable(TBB OFF)
+    endif()
+    if (CXX11_THREADS)
+      update_cache_variable(CXX11_THREADS OFF)
+    endif()
+  endif()
+endif()
+
+if (CXX11 AND TBB)
+  find_package(TBB QUIET)
+  if (TBB_FOUND)
+    message("-- Building with TBB (version: ${TBB_VERSION}).")
+    list(APPEND CERES_COMPILE_OPTIONS CERES_USE_TBB)
+    include_directories(${TBB_INCLUDE_DIRS})
+  else (TBB_FOUND)
+    message("-- Failed to find TBB, disabling.")
+    update_cache_variable(TBB OFF)
+  endif (TBB_FOUND)
+endif()
+
+if (CXX11 AND CXX11_THREADS)
+  message("-- Building with C++11 threads.")
+  list(APPEND CERES_COMPILE_OPTIONS CERES_USE_CXX11_THREADS)
+endif()
+
+if (NOT OPENMP AND NOT TBB AND NOT CXX11_THREADS)
+  message("-- Neither OpenMP, TBB or C++11 threads is enabled, "
+    "disabling multithreading.")
+  list(APPEND CERES_COMPILE_OPTIONS CERES_NO_THREADS)
+else (NOT OPENMP AND NOT TBB AND NOT CXX11_THREADS)
+  if (UNIX)
+    # At least on Linux, we need pthreads to be enabled for mutex to
+    # compile.  This may not work on Windows or Android.
+    find_package(Threads REQUIRED)
+    list(APPEND CERES_COMPILE_OPTIONS CERES_HAVE_PTHREAD)
+    list(APPEND CERES_COMPILE_OPTIONS CERES_HAVE_RWLOCK)
+  endif (UNIX)
+endif (NOT OPENMP AND NOT TBB AND NOT CXX11_THREADS)
+
 if (BUILD_BENCHMARKS)
   find_package(benchmark QUIET)
   if (benchmark_FOUND)
@@ -529,6 +564,7 @@ if (BUILD_BENCHMARKS)
      message("-- Failed to find Google benchmark library, disabling build of benchmarks.")
      update_cache_variable(BUILD_BENCHMARKS OFF)
   endif()
+  mark_as_advanced(benchmark_DIR)
 endif()
 
 include_directories(

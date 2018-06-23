@@ -1,0 +1,361 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>General Unconstrained Minimization &mdash; Ceres Solver</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="Ceres Solver" href="index.html"/>
+        <link rel="up" title="Tutorial" href="tutorial.html"/>
+        <link rel="next" title="On Derivatives" href="derivatives.html"/>
+        <link rel="prev" title="Non-linear Least Squares" href="nnls_tutorial.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Ceres Solver
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.14
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="features.html">Why?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="tutorial.html">Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="nnls_tutorial.html">Non-linear Least Squares</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">General Unconstrained Minimization</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#rosenbrock-s-function">Rosenbrock’s Function</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="derivatives.html">On Derivatives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nnls_modeling.html">Modeling Non-linear Least Squares</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nnls_solving.html">Solving Non-linear Least Squares</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nnls_covariance.html">Covariance Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gradient_solver.html">General Unconstrained Minimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faqs.html">FAQS, Tips &amp; Tricks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="users.html">Users</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="version_history.html">Version History</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bibliography.html">Bibliography</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">Ceres Solver</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="tutorial.html">Tutorial</a> &raquo;</li>
+      
+    <li>General Unconstrained Minimization</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="general-unconstrained-minimization">
+<span id="chapter-gradient-tutorial"></span><h1>General Unconstrained Minimization<a class="headerlink" href="#general-unconstrained-minimization" title="Permalink to this headline">¶</a></h1>
+<p>While much of Ceres Solver is devoted to solving non-linear least
+squares problems, internally it contains a solver that can solve
+general unconstrained optimization problems using just their objective
+function value and gradients. The <code class="docutils literal"><span class="pre">GradientProblem</span></code> and
+<code class="docutils literal"><span class="pre">GradientProblemSolver</span></code> objects give the user access to this solver.</p>
+<p>So without much further ado, let us look at how one goes about using
+them.</p>
+<div class="section" id="rosenbrock-s-function">
+<h2>Rosenbrock’s Function<a class="headerlink" href="#rosenbrock-s-function" title="Permalink to this headline">¶</a></h2>
+<p>We consider the minimization of the famous <a class="reference external" href="http://en.wikipedia.org/wiki/Rosenbrock_function">Rosenbrock’s function</a> <a class="footnote-reference" href="#f1" id="id2">[1]</a>.</p>
+<p>We begin by defining an instance of the <code class="docutils literal"><span class="pre">FirstOrderFunction</span></code>
+interface. This is the object that is responsible for computing the
+objective function value and the gradient (if required). This is the
+analog of the <code class="xref cpp cpp-class docutils literal"><span class="pre">CostFunction</span></code> when defining non-linear least
+squares problems in Ceres.</p>
+<div class="code highlight-c++"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Rosenbrock</span> <span class="o">:</span> <span class="k">public</span> <span class="n">ceres</span><span class="o">::</span><span class="n">FirstOrderFunction</span> <span class="p">{</span>
+ <span class="k">public</span><span class="o">:</span>
+  <span class="k">virtual</span> <span class="kt">bool</span> <span class="n">Evaluate</span><span class="p">(</span><span class="k">const</span> <span class="kt">double</span><span class="o">*</span> <span class="n">parameters</span><span class="p">,</span>
+                        <span class="kt">double</span><span class="o">*</span> <span class="n">cost</span><span class="p">,</span>
+                        <span class="kt">double</span><span class="o">*</span> <span class="n">gradient</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span>
+    <span class="k">const</span> <span class="kt">double</span> <span class="n">x</span> <span class="o">=</span> <span class="n">parameters</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+    <span class="k">const</span> <span class="kt">double</span> <span class="n">y</span> <span class="o">=</span> <span class="n">parameters</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+
+    <span class="n">cost</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="mf">100.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">x</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">x</span> <span class="o">*</span> <span class="n">x</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">gradient</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">gradient</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.0</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="mf">200.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">x</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">x</span><span class="p">;</span>
+      <span class="n">gradient</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">200.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">x</span> <span class="o">*</span> <span class="n">x</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="k">virtual</span> <span class="kt">int</span> <span class="n">NumParameters</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span> <span class="k">return</span> <span class="mi">2</span><span class="p">;</span> <span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>Minimizing it then is a straightforward matter of constructing a
+<a class="reference internal" href="gradient_solver.html#_CPPv215GradientProblem" title="GradientProblem"><code class="xref cpp cpp-class docutils literal"><span class="pre">GradientProblem</span></code></a> object and calling <a class="reference internal" href="gradient_solver.html#_CPPv25SolveRKN21GradientProblemSolver7OptionsERK15GradientProblemPdPN21GradientProblemSolver7SummaryE" title="Solve"><code class="xref cpp cpp-func docutils literal"><span class="pre">Solve()</span></code></a> on it.</p>
+<div class="code highlight-c++"><div class="highlight"><pre><span></span><span class="kt">double</span> <span class="n">parameters</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="o">-</span><span class="mf">1.2</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">};</span>
+
+<span class="n">ceres</span><span class="o">::</span><span class="n">GradientProblem</span> <span class="n">problem</span><span class="p">(</span><span class="k">new</span> <span class="n">Rosenbrock</span><span class="p">());</span>
+
+<span class="n">ceres</span><span class="o">::</span><span class="n">GradientProblemSolver</span><span class="o">::</span><span class="n">Options</span> <span class="n">options</span><span class="p">;</span>
+<span class="n">options</span><span class="p">.</span><span class="n">minimizer_progress_to_stdout</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+<span class="n">ceres</span><span class="o">::</span><span class="n">GradientProblemSolver</span><span class="o">::</span><span class="n">Summary</span> <span class="n">summary</span><span class="p">;</span>
+<span class="n">ceres</span><span class="o">::</span><span class="n">Solve</span><span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="n">problem</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">summary</span><span class="p">);</span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="n">summary</span><span class="p">.</span><span class="n">FullReport</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Executing this code results, solve the problem using limited memory
+<a class="reference external" href="http://en.wikipedia.org/wiki/Broyden%E2%80%93Fletcher%E2%80%93Goldfarb%E2%80%93Shanno_algorithm">BFGS</a>
+algorithm.</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>   <span class="m">0</span>: f: <span class="m">2</span>.420000e+01 d: <span class="m">0</span>.00e+00 g: <span class="m">2</span>.16e+02 h: <span class="m">0</span>.00e+00 s: <span class="m">0</span>.00e+00 e:  <span class="m">0</span> it: <span class="m">2</span>.00e-05 tt: <span class="m">2</span>.00e-05
+   <span class="m">1</span>: f: <span class="m">4</span>.280493e+00 d: <span class="m">1</span>.99e+01 g: <span class="m">1</span>.52e+01 h: <span class="m">2</span>.01e-01 s: <span class="m">8</span>.62e-04 e:  <span class="m">2</span> it: <span class="m">7</span>.32e-05 tt: <span class="m">2</span>.19e-04
+   <span class="m">2</span>: f: <span class="m">3</span>.571154e+00 d: <span class="m">7</span>.09e-01 g: <span class="m">1</span>.35e+01 h: <span class="m">3</span>.78e-01 s: <span class="m">1</span>.34e-01 e:  <span class="m">3</span> it: <span class="m">2</span>.50e-05 tt: <span class="m">2</span>.68e-04
+   <span class="m">3</span>: f: <span class="m">3</span>.440869e+00 d: <span class="m">1</span>.30e-01 g: <span class="m">1</span>.73e+01 h: <span class="m">1</span>.36e-01 s: <span class="m">1</span>.00e+00 e:  <span class="m">1</span> it: <span class="m">4</span>.05e-06 tt: <span class="m">2</span>.92e-04
+   <span class="m">4</span>: f: <span class="m">3</span>.213597e+00 d: <span class="m">2</span>.27e-01 g: <span class="m">1</span>.55e+01 h: <span class="m">1</span>.06e-01 s: <span class="m">4</span>.59e-01 e:  <span class="m">1</span> it: <span class="m">2</span>.86e-06 tt: <span class="m">3</span>.14e-04
+   <span class="m">5</span>: f: <span class="m">2</span>.839723e+00 d: <span class="m">3</span>.74e-01 g: <span class="m">1</span>.05e+01 h: <span class="m">1</span>.34e-01 s: <span class="m">5</span>.24e-01 e:  <span class="m">1</span> it: <span class="m">2</span>.86e-06 tt: <span class="m">3</span>.36e-04
+   <span class="m">6</span>: f: <span class="m">2</span>.448490e+00 d: <span class="m">3</span>.91e-01 g: <span class="m">1</span>.29e+01 h: <span class="m">3</span>.04e-01 s: <span class="m">1</span>.00e+00 e:  <span class="m">1</span> it: <span class="m">4</span>.05e-06 tt: <span class="m">3</span>.58e-04
+   <span class="m">7</span>: f: <span class="m">1</span>.943019e+00 d: <span class="m">5</span>.05e-01 g: <span class="m">4</span>.00e+00 h: <span class="m">8</span>.81e-02 s: <span class="m">7</span>.43e-01 e:  <span class="m">1</span> it: <span class="m">4</span>.05e-06 tt: <span class="m">3</span>.79e-04
+   <span class="m">8</span>: f: <span class="m">1</span>.731469e+00 d: <span class="m">2</span>.12e-01 g: <span class="m">7</span>.36e+00 h: <span class="m">1</span>.71e-01 s: <span class="m">4</span>.60e-01 e:  <span class="m">2</span> it: <span class="m">9</span>.06e-06 tt: <span class="m">4</span>.06e-04
+   <span class="m">9</span>: f: <span class="m">1</span>.503267e+00 d: <span class="m">2</span>.28e-01 g: <span class="m">6</span>.47e+00 h: <span class="m">8</span>.66e-02 s: <span class="m">1</span>.00e+00 e:  <span class="m">1</span> it: <span class="m">3</span>.81e-06 tt: <span class="m">4</span>.33e-04
+  <span class="m">10</span>: f: <span class="m">1</span>.228331e+00 d: <span class="m">2</span>.75e-01 g: <span class="m">2</span>.00e+00 h: <span class="m">7</span>.70e-02 s: <span class="m">7</span>.90e-01 e:  <span class="m">1</span> it: <span class="m">3</span>.81e-06 tt: <span class="m">4</span>.54e-04
+  <span class="m">11</span>: f: <span class="m">1</span>.016523e+00 d: <span class="m">2</span>.12e-01 g: <span class="m">5</span>.15e+00 h: <span class="m">1</span>.39e-01 s: <span class="m">3</span>.76e-01 e:  <span class="m">2</span> it: <span class="m">1</span>.00e-05 tt: <span class="m">4</span>.82e-04
+  <span class="m">12</span>: f: <span class="m">9</span>.145773e-01 d: <span class="m">1</span>.02e-01 g: <span class="m">6</span>.74e+00 h: <span class="m">7</span>.98e-02 s: <span class="m">1</span>.00e+00 e:  <span class="m">1</span> it: <span class="m">3</span>.10e-06 tt: <span class="m">5</span>.03e-04
+  <span class="m">13</span>: f: <span class="m">7</span>.508302e-01 d: <span class="m">1</span>.64e-01 g: <span class="m">3</span>.88e+00 h: <span class="m">5</span>.76e-02 s: <span class="m">4</span>.93e-01 e:  <span class="m">1</span> it: <span class="m">2</span>.86e-06 tt: <span class="m">5</span>.25e-04
+  <span class="m">14</span>: f: <span class="m">5</span>.832378e-01 d: <span class="m">1</span>.68e-01 g: <span class="m">5</span>.56e+00 h: <span class="m">1</span>.42e-01 s: <span class="m">1</span>.00e+00 e:  <span class="m">1</span> it: <span class="m">3</span>.81e-06 tt: <span class="m">5</span>.47e-04
+  <span class="m">15</span>: f: <span class="m">3</span>.969581e-01 d: <span class="m">1</span>.86e-01 g: <span class="m">1</span>.64e+00 h: <span class="m">1</span>.17e-01 s: <span class="m">1</span>.00e+00 e:  <span class="m">1</span> it: <span class="m">4</span>.05e-06 tt: <span class="m">5</span>.68e-04
+  <span class="m">16</span>: f: <span class="m">3</span>.171557e-01 d: <span class="m">7</span>.98e-02 g: <span class="m">3</span>.84e+00 h: <span class="m">1</span>.18e-01 s: <span class="m">3</span>.97e-01 e:  <span class="m">2</span> it: <span class="m">9</span>.06e-06 tt: <span class="m">5</span>.94e-04
+  <span class="m">17</span>: f: <span class="m">2</span>.641257e-01 d: <span class="m">5</span>.30e-02 g: <span class="m">3</span>.27e+00 h: <span class="m">6</span>.14e-02 s: <span class="m">1</span>.00e+00 e:  <span class="m">1</span> it: <span class="m">3</span>.10e-06 tt: <span class="m">6</span>.16e-04
+  <span class="m">18</span>: f: <span class="m">1</span>.909730e-01 d: <span class="m">7</span>.32e-02 g: <span class="m">5</span>.29e-01 h: <span class="m">8</span>.55e-02 s: <span class="m">6</span>.82e-01 e:  <span class="m">1</span> it: <span class="m">4</span>.05e-06 tt: <span class="m">6</span>.42e-04
+  <span class="m">19</span>: f: <span class="m">1</span>.472012e-01 d: <span class="m">4</span>.38e-02 g: <span class="m">3</span>.11e+00 h: <span class="m">1</span>.20e-01 s: <span class="m">3</span>.47e-01 e:  <span class="m">2</span> it: <span class="m">1</span>.00e-05 tt: <span class="m">6</span>.69e-04
+  <span class="m">20</span>: f: <span class="m">1</span>.093558e-01 d: <span class="m">3</span>.78e-02 g: <span class="m">2</span>.97e+00 h: <span class="m">8</span>.43e-02 s: <span class="m">1</span>.00e+00 e:  <span class="m">1</span> it: <span class="m">3</span>.81e-06 tt: <span class="m">6</span>.91e-04
+  <span class="m">21</span>: f: <span class="m">6</span>.710346e-02 d: <span class="m">4</span>.23e-02 g: <span class="m">1</span>.42e+00 h: <span class="m">9</span>.64e-02 s: <span class="m">8</span>.85e-01 e:  <span class="m">1</span> it: <span class="m">3</span>.81e-06 tt: <span class="m">7</span>.12e-04
+  <span class="m">22</span>: f: <span class="m">3</span>.993377e-02 d: <span class="m">2</span>.72e-02 g: <span class="m">2</span>.30e+00 h: <span class="m">1</span>.29e-01 s: <span class="m">4</span>.63e-01 e:  <span class="m">2</span> it: <span class="m">9</span>.06e-06 tt: <span class="m">7</span>.39e-04
+  <span class="m">23</span>: f: <span class="m">2</span>.911794e-02 d: <span class="m">1</span>.08e-02 g: <span class="m">2</span>.55e+00 h: <span class="m">6</span>.55e-02 s: <span class="m">1</span>.00e+00 e:  <span class="m">1</span> it: <span class="m">4</span>.05e-06 tt: <span class="m">7</span>.62e-04
+  <span class="m">24</span>: f: <span class="m">1</span>.457683e-02 d: <span class="m">1</span>.45e-02 g: <span class="m">2</span>.77e-01 h: <span class="m">6</span>.37e-02 s: <span class="m">6</span>.14e-01 e:  <span class="m">1</span> it: <span class="m">3</span>.81e-06 tt: <span class="m">7</span>.84e-04
+  <span class="m">25</span>: f: <span class="m">8</span>.577515e-03 d: <span class="m">6</span>.00e-03 g: <span class="m">2</span>.86e+00 h: <span class="m">1</span>.40e-01 s: <span class="m">1</span>.00e+00 e:  <span class="m">1</span> it: <span class="m">4</span>.05e-06 tt: <span class="m">8</span>.05e-04
+  <span class="m">26</span>: f: <span class="m">3</span>.486574e-03 d: <span class="m">5</span>.09e-03 g: <span class="m">1</span>.76e-01 h: <span class="m">1</span>.23e-02 s: <span class="m">1</span>.00e+00 e:  <span class="m">1</span> it: <span class="m">4</span>.05e-06 tt: <span class="m">8</span>.27e-04
+  <span class="m">27</span>: f: <span class="m">1</span>.257570e-03 d: <span class="m">2</span>.23e-03 g: <span class="m">1</span>.39e-01 h: <span class="m">5</span>.08e-02 s: <span class="m">1</span>.00e+00 e:  <span class="m">1</span> it: <span class="m">4</span>.05e-06 tt: <span class="m">8</span>.48e-04
+  <span class="m">28</span>: f: <span class="m">2</span>.783568e-04 d: <span class="m">9</span>.79e-04 g: <span class="m">6</span>.20e-01 h: <span class="m">6</span>.47e-02 s: <span class="m">1</span>.00e+00 e:  <span class="m">1</span> it: <span class="m">4</span>.05e-06 tt: <span class="m">8</span>.69e-04
+  <span class="m">29</span>: f: <span class="m">2</span>.533399e-05 d: <span class="m">2</span>.53e-04 g: <span class="m">1</span>.68e-02 h: <span class="m">1</span>.98e-03 s: <span class="m">1</span>.00e+00 e:  <span class="m">1</span> it: <span class="m">3</span>.81e-06 tt: <span class="m">8</span>.91e-04
+  <span class="m">30</span>: f: <span class="m">7</span>.591572e-07 d: <span class="m">2</span>.46e-05 g: <span class="m">5</span>.40e-03 h: <span class="m">9</span>.27e-03 s: <span class="m">1</span>.00e+00 e:  <span class="m">1</span> it: <span class="m">3</span>.81e-06 tt: <span class="m">9</span>.12e-04
+  <span class="m">31</span>: f: <span class="m">1</span>.902460e-09 d: <span class="m">7</span>.57e-07 g: <span class="m">1</span>.62e-03 h: <span class="m">1</span>.89e-03 s: <span class="m">1</span>.00e+00 e:  <span class="m">1</span> it: <span class="m">2</span>.86e-06 tt: <span class="m">9</span>.33e-04
+  <span class="m">32</span>: f: <span class="m">1</span>.003030e-12 d: <span class="m">1</span>.90e-09 g: <span class="m">3</span>.50e-05 h: <span class="m">3</span>.52e-05 s: <span class="m">1</span>.00e+00 e:  <span class="m">1</span> it: <span class="m">3</span>.10e-06 tt: <span class="m">9</span>.54e-04
+  <span class="m">33</span>: f: <span class="m">4</span>.835994e-17 d: <span class="m">1</span>.00e-12 g: <span class="m">1</span>.05e-07 h: <span class="m">1</span>.13e-06 s: <span class="m">1</span>.00e+00 e:  <span class="m">1</span> it: <span class="m">4</span>.05e-06 tt: <span class="m">9</span>.81e-04
+  <span class="m">34</span>: f: <span class="m">1</span>.885250e-22 d: <span class="m">4</span>.84e-17 g: <span class="m">2</span>.69e-10 h: <span class="m">1</span>.45e-08 s: <span class="m">1</span>.00e+00 e:  <span class="m">1</span> it: <span class="m">4</span>.05e-06 tt: <span class="m">1</span>.00e-03
+
+Solver Summary <span class="o">(</span>v <span class="m">1</span>.12.0-lapack-suitesparse-cxsparse-no_openmp<span class="o">)</span>
+
+Parameters                                  <span class="m">2</span>
+Line search direction              LBFGS <span class="o">(</span><span class="m">20</span><span class="o">)</span>
+Line search <span class="nb">type</span>                  CUBIC WOLFE
+
+
+Cost:
+Initial                          <span class="m">2</span>.420000e+01
+Final                            <span class="m">1</span>.885250e-22
+Change                           <span class="m">2</span>.420000e+01
+
+Minimizer iterations                       <span class="m">35</span>
+
+Time <span class="o">(</span>in seconds<span class="o">)</span>:
+
+  Cost evaluation                       <span class="m">0</span>.000
+  Gradient evaluation                   <span class="m">0</span>.000
+Total                                   <span class="m">0</span>.003
+
+Termination:                      CONVERGENCE <span class="o">(</span>Gradient tolerance reached. Gradient max norm: <span class="m">9</span>.032775e-13 &lt;<span class="o">=</span> <span class="m">1</span>.000000e-10<span class="o">)</span>
+</pre></div>
+</div>
+<p class="rubric">Footnotes</p>
+<table class="docutils footnote" frame="void" id="f1" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[1]</a></td><td><a class="reference external" href="https://ceres-solver.googlesource.com/ceres-solver/+/master/examples/rosenbrock.cc">examples/rosenbrock.cc</a></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="derivatives.html" class="btn btn-neutral float-right" title="On Derivatives" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="nnls_tutorial.html" class="btn btn-neutral" title="Non-linear Least Squares" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018 Google Inc.
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1.14.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML">
+      MathJax.Hub.Config({
+          "HTML-CSS": {
+            availableFonts: ["TeX"]
+          }
+        });
+      </script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+  
+ 
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-49769510-1', 'ceres-solver.org');
+  ga('send', 'pageview');
+</script>
+
+
+</body>
+</html>
