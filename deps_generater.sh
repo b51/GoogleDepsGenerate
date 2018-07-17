@@ -61,11 +61,12 @@ echo -e "\e[1;32mBuild and install cartographer.\e[0m"
 #---------------------------------------------------#
 cd $SOURCE_ROOT
 rm -rf build
-mkdir build && cd build && cmake ..
+mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=$INSTALL_ROOT ..
 make -j4
-cp -rf cartographer/cartographer $INCLUDE_ROOT
-cp -rf cartographer/lib* $LIB_ROOT
-cp $SOURCE_ROOT/cartographer/cartographer/cmake/functions.cmake $INCLUDE_ROOT/cartographer/cmake/
+make install
+#cp -rf cartographer/cartographer $INCLUDE_ROOT
+#cp -rf cartographer/lib* $LIB_ROOT
+#cp $SOURCE_ROOT/cartographer/cartographer/cmake/functions.cmake $INCLUDE_ROOT/cartographer/cmake/
 
 echo -e "\e[1;32mCopy ros pkgs.\e[0m"
 cp $SOURCE_ROOT/rospkg/cmake/GoogleDeps.cmake $CMAKE_ROOT

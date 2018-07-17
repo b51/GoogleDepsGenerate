@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 The Cartographer Authors
+ * Copyright 2018 The Cartographer Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "cartographer/common/thread_pool.h"
+#include "cartographer/common/internal/testing/thread_pool_for_testing.h"
 
 #include <unistd.h>
 #include <algorithm>
@@ -23,25 +23,17 @@
 
 #include "cartographer/common/make_unique.h"
 #include "cartographer/common/task.h"
+#include "cartographer/common/time.h"
 #include "glog/logging.h"
 
 namespace cartographer {
 namespace common {
+namespace testing {
 
-void ThreadPoolInterface::Execute(Task* task) { task->Execute(); }
+ThreadPoolForTesting::ThreadPoolForTesting()
+    : thread_([this]() { ThreadPoolForTesting::DoWork(); }) {}
 
-void ThreadPoolInterface::SetThreadPool(Task* task) {
-  task->SetThreadPool(this);
-}
-
-ThreadPool::ThreadPool(int num_threads) {
-  MutexLocker locker(&mutex_);
-  for (int i = 0; i != num_threads; ++i) {
-    pool_.emplace_back([this]() { ThreadPool::DoWork(); });
-  }
-}
-
-ThreadPool::~ThreadPool() {
+ThreadPoolForTesting::~ThreadPoolForTesting() {
   {
     MutexLocker locker(&mutex_);
     CHECK(running_);
@@ -49,12 +41,10 @@ ThreadPool::~ThreadPool() {
     CHECK_EQ(task_queue_.size(), 0);
     CHECK_EQ(tasks_not_ready_.size(), 0);
   }
-  for (std::thread& thread : pool_) {
-    thread.join();
-  }
+  thread_.join();
 }
 
-void ThreadPool::NotifyDependenciesCompleted(Task* task) {
+void ThreadPoolForTesting::NotifyDependenciesCompleted(Task* task) {
   MutexLocker locker(&mutex_);
   CHECK(running_);
   auto it = tasks_not_ready_.find(task);
@@ -63,46 +53,57 @@ void ThreadPool::NotifyDependenciesCompleted(Task* task) {
   tasks_not_ready_.erase(it);
 }
 
-std::weak_ptr<Task> ThreadPool::Schedule(std::unique_ptr<Task> task) {
+std::weak_ptr<Task> ThreadPoolForTesting::Schedule(std::unique_ptr<Task> task) {
   std::shared_ptr<Task> shared_task;
   {
     MutexLocker locker(&mutex_);
+    idle_ = false;
     CHECK(running_);
     auto insert_result =
         tasks_not_ready_.insert(std::make_pair(task.get(), std::move(task)));
-    CHECK(insert_result.second) << "Schedule called twice";
+    CHECK(insert_result.second) << "ScheduleWhenReady called twice";
     shared_task = insert_result.first->second;
   }
   SetThreadPool(shared_task.get());
   return shared_task;
 }
 
-void ThreadPool::DoWork() {
-#ifdef __linux__
-  // This changes the per-thread nice level of the current thread on Linux. We
-  // do this so that the background work done by the thread pool is not taking
-  // away CPU resources from more important foreground threads.
-  CHECK_NE(nice(10), -1);
-#endif
+void ThreadPoolForTesting::WaitUntilIdle() {
+  for (;;) {
+    {
+      common::MutexLocker locker(&mutex_);
+      if (locker.AwaitWithTimeout([this]() REQUIRES(mutex_) { return idle_; },
+                                  common::FromSeconds(0.1))) {
+        return;
+      }
+    }
+  }
+}
+
+void ThreadPoolForTesting::DoWork() {
   for (;;) {
     std::shared_ptr<Task> task;
     {
       MutexLocker locker(&mutex_);
-      locker.Await([this]() REQUIRES(mutex_) {
-        return !task_queue_.empty() || !running_;
-      });
+      locker.AwaitWithTimeout(
+          [this]()
+              REQUIRES(mutex_) { return !task_queue_.empty() || !running_; },
+          common::FromSeconds(0.1));
       if (!task_queue_.empty()) {
-        task = std::move(task_queue_.front());
+        task = task_queue_.front();
         task_queue_.pop_front();
-      } else if (!running_) {
+      }
+      if (!running_) {
         return;
       }
+      if (tasks_not_ready_.empty() && task_queue_.empty() && !task) {
+        idle_ = true;
+      }
     }
-    CHECK(task);
-    CHECK_EQ(task->GetState(), common::Task::DEPENDENCIES_COMPLETED);
-    Execute(task.get());
+    if (task) Execute(task.get());
   }
 }
 
+}  // namespace testing
 }  // namespace common
 }  // namespace cartographer

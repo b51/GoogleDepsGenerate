@@ -20,7 +20,7 @@
 #include <iostream>
 #include <streambuf>
 
-#include "cartographer/include/config.h"
+#include "cartographer/common/config.h"
 #include "glog/logging.h"
 
 namespace cartographer {

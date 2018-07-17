@@ -64,8 +64,6 @@
 # (To distribute this file outside of CMake, substitute the full
 #  License text for the above reference.)
 
-include(FindPackageHandleStandardArgs)
-
 unset(_lua_include_subdirs)
 unset(_lua_library_names)
 unset(_lua_append_versions)

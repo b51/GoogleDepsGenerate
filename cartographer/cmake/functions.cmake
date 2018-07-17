@@ -70,7 +70,7 @@ macro(google_initialize_cartographer_project)
         ${CARTOGRAPHER_CMAKE_DIR}/modules)
   else()
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-        ${CMAKE_CURRENT_SOURCE_DIR}/cartographer/cmake/modules)
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
   endif()
   set(GOOG_CXX_FLAGS "-pthread -std=c++11 -fPIC ${GOOG_CXX_FLAGS}")
 
