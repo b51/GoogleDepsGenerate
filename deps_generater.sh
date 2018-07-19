@@ -52,17 +52,16 @@ CERES_ROOT=$SOURCE_ROOT/ceres-solver
 cd $CERES_ROOT
 rm -rf build install
 mkdir build && cd build
-cmake -DCXX11=ON -DCMAKE_INSTALL_PREFIX=$INSTALL_ROOT ..
-make -j4 && make install
+cmake -GNinja -DCXX11=ON -DCMAKE_INSTALL_PREFIX=$INSTALL_ROOT ..
+ninja install
 #===================================================#
 
 echo -e "\e[1;32mBuild and install cartographer.\e[0m"
 #---------------------------------------------------#
 cd $SOURCE_ROOT/cartographer
 rm -rf build
-mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=$INSTALL_ROOT ..
-make -j4
-make install
+mkdir build && cd build && cmake -GNinja -DCMAKE_INSTALL_PREFIX=$INSTALL_ROOT ..
+ninja install
 #cp -rf cartographer/cartographer $INCLUDE_ROOT
 #cp -rf cartographer/lib* $LIB_ROOT
 #cp $SOURCE_ROOT/cartographer/cartographer/cmake/functions.cmake $INCLUDE_ROOT/cartographer/cmake/
