@@ -12,9 +12,6 @@
 
 SOURCE_ROOT=`pwd`
 INSTALL_ROOT=$SOURCE_ROOT/../GoogleDeps
-#BIN_ROOT=$INSTALL_ROOT/bin
-#INCLUDE_ROOT=$INSTALL_ROOT/include
-#LIB_ROOT=$INSTALL_ROOT/lib
 
 rm -rf $INSTALL_ROOT
 mkdir -p $INSTALL_ROOT
@@ -22,13 +19,9 @@ mkdir -p $INSTALL_ROOT
 echo -e "\e[1;32mBuild Lua.\e[0m"
 #---------------------------------------------------#
 LUA_ROOT=$SOURCE_ROOT/lua-5.3.5
-tar zxvf lua-5.3.5.tar.gz
 cd $LUA_ROOT
 make linux
 sudo make install
-#cp -rf install/bin/* $BIN_ROOT
-#cp -rf install/include/* $INCLUDE_ROOT
-#cp -rf install/lib/lib* $LIB_ROOT
 #===================================================#
 
 echo -e "\e[1;32mBuild and install protobuf.\e[0m"
@@ -41,9 +34,6 @@ cd $PROTOBUF_ROOT
 ./configure --prefix=$INSTALL_ROOT
 make -j4
 make install
-#cp -rf install/bin/* $BIN_ROOT
-#cp -rf install/include/* $INCLUDE_ROOT
-#cp -rf install/lib/libprotobuf.so* $LIB_ROOT
 #===================================================#
 
 echo -e "\e[1;32mBuild and install ceres.\e[0m"
@@ -62,9 +52,6 @@ cd $SOURCE_ROOT/cartographer
 rm -rf build
 mkdir build && cd build && cmake -GNinja -DCMAKE_INSTALL_PREFIX=$INSTALL_ROOT ..
 ninja install
-#cp -rf cartographer/cartographer $INCLUDE_ROOT
-#cp -rf cartographer/lib* $LIB_ROOT
-#cp $SOURCE_ROOT/cartographer/cartographer/cmake/functions.cmake $INCLUDE_ROOT/cartographer/cmake/
 
 echo -e "\e[1;32mCopy ros pkgs.\e[0m"
 cp $SOURCE_ROOT/rospkg/CMakeLists.txt.pkg $INSTALL_ROOT/CMakeLists.txt
