@@ -21,11 +21,11 @@ mkdir -p $INSTALL_ROOT
 
 echo -e "\e[1;32mBuild Lua.\e[0m"
 #---------------------------------------------------#
-LUA_ROOT=$SOURCE_ROOT/lua-5.3.4
+LUA_ROOT=$SOURCE_ROOT/lua-5.3.5
+tar zxvf lua-5.3.5.tar.gz
 cd $LUA_ROOT
-rm -rf install && make clean
 make linux
-make install INSTALL_TOP=$INSTALL_ROOT
+sudo make install
 #cp -rf install/bin/* $BIN_ROOT
 #cp -rf install/include/* $INCLUDE_ROOT
 #cp -rf install/lib/lib* $LIB_ROOT
