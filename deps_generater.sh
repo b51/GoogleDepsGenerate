@@ -11,17 +11,22 @@
 #!/bin/bash
 
 SOURCE_ROOT=`pwd`
-INSTALL_ROOT=$SOURCE_ROOT/../GoogleDeps
+INSTALL_ROOT=$(dirname $SOURCE_ROOT)/GoogleDeps
 
 rm -rf $INSTALL_ROOT
 mkdir -p $INSTALL_ROOT
 
-echo -e "\e[1;32mBuild Lua.\e[0m"
+#echo -e "\e[1;32mBuild Lua.\e[0m"
+##---------------------------------------------------#
+#LUA_ROOT=$SOURCE_ROOT/lua-5.3.5
+#cd $LUA_ROOT
+#make linux
+#sudo make install
+##===================================================#
+
+echo -e "\e[1;32mInstall Lua.\e[0m"
 #---------------------------------------------------#
-LUA_ROOT=$SOURCE_ROOT/lua-5.3.5
-cd $LUA_ROOT
-make linux
-sudo make install
+sudo apt install lua5.3 liblua5.3-dev -y
 #===================================================#
 
 echo -e "\e[1;32mBuild and install protobuf.\e[0m"
