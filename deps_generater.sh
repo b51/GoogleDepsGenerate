@@ -47,7 +47,7 @@ CERES_ROOT=$SOURCE_ROOT/ceres-solver
 cd $CERES_ROOT
 rm -rf build install
 mkdir build && cd build
-cmake -GNinja -DCXX11=ON -DCMAKE_INSTALL_PREFIX=$INSTALL_ROOT ..
+cmake -GNinja -std=c++11 -DCMAKE_INSTALL_PREFIX=$INSTALL_ROOT ..
 ninja install
 #===================================================#
 
