@@ -30,15 +30,16 @@ sudo apt install lua5.3 liblua5.3-dev -y
 #===================================================#
 
 echo -e "\e[1;32mBuild and install protobuf.\e[0m"
-#---------------------------------------------------#
-cd $SOURCE_ROOT
-PROTOBUF_ROOT=$SOURCE_ROOT/protobuf-3.0.0
-rm -rf $PROTOBUF_ROOT
-tar zxvf protobuf-cpp-3.0.0.tar.gz
-cd $PROTOBUF_ROOT
-./configure --prefix=$INSTALL_ROOT
-make -j4
-make install
+##---------------------------------------------------#
+./install_proto3.sh
+#cd $SOURCE_ROOT
+#PROTOBUF_ROOT=$SOURCE_ROOT/protobuf-3.0.0
+#rm -rf $PROTOBUF_ROOT
+#tar zxvf protobuf-cpp-3.0.0.tar.gz
+#cd $PROTOBUF_ROOT
+#./configure --prefix=$INSTALL_ROOT
+#make -j4
+#make install
 #===================================================#
 
 echo -e "\e[1;32mBuild and install ceres.\e[0m"
