@@ -29,6 +29,11 @@ echo -e "\e[1;32mInstall Lua.\e[0m"
 sudo apt install lua5.3 liblua5.3-dev -y
 #===================================================#
 
+echo -e "\e[1;32mInstall dependences.\e[0m"
+#---------------------------------------------------#
+sudo apt install libsuitesparse-dev ninja-build libmetis-dev -y
+#===================================================#
+
 echo -e "\e[1;32mBuild and install protobuf.\e[0m"
 ##---------------------------------------------------#
 ./install_proto3.sh
