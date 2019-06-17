@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 2.8.12)  # Ships with Ubuntu 14.04 (Trusty)
+cmake_minimum_required(VERSION 3.2)
 
 project(cartographer)
 
@@ -29,6 +29,8 @@ include("${PROJECT_SOURCE_DIR}/cmake/functions.cmake")
 google_initialize_cartographer_project()
 google_enable_testing()
 
+find_package(Abseil REQUIRED HINTS ${CMAKE_INSTALL_PREFIX}/lib/cmake/absl)
+set(BOOST_COMPONENTS iostreams)
 find_package(Boost REQUIRED COMPONENTS iostreams)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
 find_package(Eigen3 REQUIRED)
@@ -54,7 +56,7 @@ install(FILES package.xml DESTINATION share/cartographer)
 set(CARTOGRAPHER_CONFIGURATION_FILES_DIRECTORY ${CMAKE_INSTALL_PREFIX}/share/cartographer/configuration_files
   CACHE PATH ".lua configuration files directory")
 
-#install(DIRECTORY configuration_files DESTINATION share/cartographer/)
+install(DIRECTORY configuration_files DESTINATION share/cartographer/)
 
 install(DIRECTORY cmake DESTINATION share/cartographer/)
 
@@ -164,7 +166,7 @@ if(${BUILD_GRPC})
 endif()
 set(INSTALL_GENERATED_HDRS ${ALL_PROTO_HDRS} ${ALL_GRPC_SERVICE_HDRS})
 
-add_library(${PROJECT_NAME} ${ALL_LIBRARY_HDRS} ${ALL_LIBRARY_SRCS})
+add_library(${PROJECT_NAME} STATIC ${ALL_LIBRARY_HDRS} ${ALL_LIBRARY_SRCS})
 
 configure_file(
   ${PROJECT_SOURCE_DIR}/cartographer/common/config.h.cmake
@@ -213,25 +215,31 @@ target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC
   "${Boost_INCLUDE_DIRS}")
 target_link_libraries(${PROJECT_NAME} PUBLIC ${Boost_LIBRARIES})
 
-# We expect find_package(Ceres) to have located these for us.
+set(GLOG_LIBRARY glog)
 target_link_libraries(${PROJECT_NAME} PUBLIC glog)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${GLOG_LIBRARY})
 target_link_libraries(${PROJECT_NAME} PUBLIC gflags)
 
-target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC
-  "${CAIRO_INCLUDE_DIRS}")
+if("${CAIRO_INCLUDE_DIRS}")
+  target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC
+    "${CAIRO_INCLUDE_DIRS}")
+endif()
 target_link_libraries(${PROJECT_NAME} PUBLIC ${CAIRO_LIBRARIES})
 
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC
   ${PROTOBUF_INCLUDE_DIR})
 # TODO(hrapp): This should not explicitly list pthread and use
 # PROTOBUF_LIBRARIES, but that failed on first try.
-target_link_libraries(${PROJECT_NAME} PUBLIC ${PROTOBUF_LIBRARY} pthread)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${PROTOBUF_LIBRARY} standalone_absl)
+target_link_libraries(${PROJECT_NAME} PUBLIC pthread)
 if(${BUILD_GRPC})
   target_link_libraries(${PROJECT_NAME} PUBLIC grpc++)
   target_link_libraries(${PROJECT_NAME} PUBLIC async_grpc)
 endif()
 if(${BUILD_PROMETHEUS})
-  target_link_libraries(${PROJECT_NAME} PUBLIC prometheus-cpp)
+  target_link_libraries(${PROJECT_NAME} PUBLIC ${ZLIB_LIBRARIES})
+  target_link_libraries(${PROJECT_NAME} PUBLIC prometheus-cpp-core)
+  target_link_libraries(${PROJECT_NAME} PUBLIC prometheus-cpp-pull)
   target_compile_definitions(${PROJECT_NAME} PUBLIC USE_PROMETHEUS=1)
 endif()
 
