@@ -29,7 +29,7 @@ include("${PROJECT_SOURCE_DIR}/cmake/functions.cmake")
 google_initialize_cartographer_project()
 google_enable_testing()
 
-find_package(Abseil REQUIRED HINTS ${CMAKE_INSTALL_PREFIX}/lib/cmake/absl)
+find_package(Abseil REQUIRED)
 set(BOOST_COMPONENTS iostreams)
 find_package(Boost REQUIRED COMPONENTS iostreams)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
